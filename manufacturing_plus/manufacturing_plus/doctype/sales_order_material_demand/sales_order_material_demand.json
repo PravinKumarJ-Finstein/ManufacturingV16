@@ -1,0 +1,270 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "hash",
+ "creation": "2026-09-25 10:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "demand_key",
+  "company",
+  "sales_order",
+  "sales_order_item",
+  "fg_item_code",
+  "bom_no",
+  "master_production_schedule",
+  "delivery_date",
+  "cb1",
+  "item_code",
+  "required_qty",
+  "available_qty",
+  "short_qty",
+  "ordered_qty",
+  "received_qty",
+  "sec2",
+  "lead_time_days",
+  "required_by_date",
+  "expected_receipt_date",
+  "cb2",
+  "material_request",
+  "material_request_item",
+  "purchase_order",
+  "purchase_order_item",
+  "sec3",
+  "status",
+  "run"
+ ],
+ "fields": [
+  {
+   "fieldname": "demand_key",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Demand Key",
+   "read_only": 1,
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "sales_order",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Sales Order",
+   "options": "Sales Order",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "sales_order_item",
+   "fieldtype": "Data",
+   "label": "Sales Order Item",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "fg_item_code",
+   "fieldtype": "Link",
+   "label": "FG Item",
+   "options": "Item",
+   "read_only": 1
+  },
+  {
+   "fieldname": "bom_no",
+   "fieldtype": "Link",
+   "label": "BOM",
+   "options": "BOM",
+   "read_only": 1
+  },
+  {
+   "fieldname": "master_production_schedule",
+   "fieldtype": "Link",
+   "label": "MPS",
+   "options": "Master Production Schedule",
+   "read_only": 1
+  },
+  {
+   "fieldname": "delivery_date",
+   "fieldtype": "Date",
+   "label": "Delivery Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cb1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "item_code",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Raw Material",
+   "options": "Item",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "required_qty",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Required Qty",
+   "precision": "6",
+   "read_only": 1
+  },
+  {
+   "fieldname": "available_qty",
+   "fieldtype": "Float",
+   "label": "Available Qty",
+   "precision": "6",
+   "read_only": 1
+  },
+  {
+   "fieldname": "short_qty",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Short Qty",
+   "precision": "6",
+   "read_only": 1
+  },
+  {
+   "fieldname": "ordered_qty",
+   "fieldtype": "Float",
+   "label": "Ordered Qty",
+   "precision": "6",
+   "read_only": 1
+  },
+  {
+   "fieldname": "received_qty",
+   "fieldtype": "Float",
+   "label": "Received Qty",
+   "precision": "6",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sec2",
+   "fieldtype": "Section Break",
+   "label": "Dates & Documents"
+  },
+  {
+   "fieldname": "lead_time_days",
+   "fieldtype": "Int",
+   "label": "Lead Time Days",
+   "read_only": 1
+  },
+  {
+   "fieldname": "required_by_date",
+   "fieldtype": "Date",
+   "label": "Required By",
+   "read_only": 1
+  },
+  {
+   "fieldname": "expected_receipt_date",
+   "fieldtype": "Date",
+   "label": "Expected Receipt",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cb2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "material_request",
+   "fieldtype": "Link",
+   "label": "Material Request",
+   "options": "Material Request",
+   "read_only": 1
+  },
+  {
+   "fieldname": "material_request_item",
+   "fieldtype": "Data",
+   "label": "Material Request Item",
+   "read_only": 1
+  },
+  {
+   "fieldname": "purchase_order",
+   "fieldtype": "Link",
+   "label": "Purchase Order",
+   "options": "Purchase Order",
+   "read_only": 1
+  },
+  {
+   "fieldname": "purchase_order_item",
+   "fieldtype": "Data",
+   "label": "Purchase Order Item",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sec3",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "Short",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "In Stock\nShort\nOrdered\nPartially Ordered\nReceived\nException\nSuperseded",
+   "read_only": 1
+  },
+  {
+   "fieldname": "run",
+   "fieldtype": "Link",
+   "label": "Auto Purchase Run",
+   "options": "Auto Purchase Run",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-09-25 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Manufacturing Plus",
+ "name": "Sales Order Material Demand",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Manufacturing Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Manufacturing User",
+   "share": 1
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

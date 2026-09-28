@@ -1,0 +1,207 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:APR-{YY}-{#####}",
+ "creation": "2026-09-25 10:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "company",
+  "trigger",
+  "sales_order",
+  "master_production_schedule",
+  "cb1",
+  "status",
+  "started_on",
+  "ended_on",
+  "attempts",
+  "last_run_on",
+  "sec2",
+  "demand_rows",
+  "mr_created",
+  "cb2",
+  "po_count",
+  "exception_count",
+  "sec3",
+  "material_requests",
+  "purchase_orders",
+  "error_log"
+ ],
+ "fields": [
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "default": "SO Submit",
+   "fieldname": "trigger",
+   "fieldtype": "Select",
+   "label": "Trigger",
+   "options": "SO Submit\nManual\nScheduled",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sales_order",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Sales Order",
+   "options": "Sales Order",
+   "read_only": 1
+  },
+  {
+   "fieldname": "master_production_schedule",
+   "fieldtype": "Link",
+   "label": "MPS",
+   "options": "Master Production Schedule",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cb1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Queued",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Queued\nIn Progress\nCompleted\nFailed\nPartially Completed",
+   "read_only": 1
+  },
+  {
+   "fieldname": "started_on",
+   "fieldtype": "Datetime",
+   "label": "Started On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "ended_on",
+   "fieldtype": "Datetime",
+   "label": "Ended On",
+   "read_only": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "attempts",
+   "fieldtype": "Int",
+   "label": "Attempts",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_run_on",
+   "fieldtype": "Datetime",
+   "label": "Last Run On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sec2",
+   "fieldtype": "Section Break",
+   "label": "Result"
+  },
+  {
+   "fieldname": "demand_rows",
+   "fieldtype": "Int",
+   "label": "Demand Rows",
+   "read_only": 1
+  },
+  {
+   "fieldname": "mr_created",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Material Requests",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cb2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "po_count",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Purchase Orders",
+   "read_only": 1
+  },
+  {
+   "fieldname": "exception_count",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Exceptions",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sec3",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "material_requests",
+   "fieldtype": "Small Text",
+   "label": "Material Request Names",
+   "read_only": 1
+  },
+  {
+   "fieldname": "purchase_orders",
+   "fieldtype": "Table",
+   "label": "Purchase Orders",
+   "options": "MP Auto Purchase Run PO",
+   "read_only": 1
+  },
+  {
+   "fieldname": "error_log",
+   "fieldtype": "Code",
+   "label": "Error Log",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-09-25 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Manufacturing Plus",
+ "name": "Auto Purchase Run",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Manufacturing Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Manufacturing User",
+   "share": 1
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

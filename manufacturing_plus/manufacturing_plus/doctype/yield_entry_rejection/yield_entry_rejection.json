@@ -1,0 +1,64 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-09-25 10:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "serial_number",
+  "defect_type",
+  "number_of_defects",
+  "location",
+  "remarks"
+ ],
+ "fields": [
+  {
+   "columns": 2,
+   "fieldname": "serial_number",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Serial / Board No"
+  },
+  {
+   "columns": 3,
+   "fieldname": "defect_type",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Defect Type",
+   "reqd": 1
+  },
+  {
+   "columns": 2,
+   "default": "1",
+   "fieldname": "number_of_defects",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "No. of Defects"
+  },
+  {
+   "columns": 2,
+   "fieldname": "location",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Location"
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-09-25 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Manufacturing Plus",
+ "name": "Yield Entry Rejection",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

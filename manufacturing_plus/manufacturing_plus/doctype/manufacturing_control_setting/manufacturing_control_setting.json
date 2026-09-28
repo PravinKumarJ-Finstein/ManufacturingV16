@@ -1,0 +1,596 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-09-25 10:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "tab_delivery",
+  "sec_edd",
+  "enable_expected_delivery_date",
+  "buffer_days",
+  "working_hours_per_day",
+  "use_workstation_working_hours",
+  "cb_edd",
+  "default_efficiency_percent",
+  "skip_holidays",
+  "holiday_list",
+  "round_up_partial_days",
+  "sec_queue",
+  "consider_committed_orders",
+  "queue_scope",
+  "cb_queue",
+  "include_drafts_in_queue",
+  "sec_stock",
+  "stock_scope",
+  "subtract_reserved_qty",
+  "net_off_earlier_orders",
+  "cb_stock",
+  "excluded_warehouses",
+  "sec_reservation",
+  "reserve_stock_on_mps",
+  "reservation_expiry_days",
+  "cb_res",
+  "release_reservation_on_work_order",
+  "sec_write",
+  "delivery_date_write_rule",
+  "cb_write",
+  "fallback_lead_days",
+  "max_lines_for_sync_compute",
+  "tab_purchase",
+  "sec_ap",
+  "enable_auto_purchase",
+  "create_mps_on_so_submit",
+  "mps_mode",
+  "mps_period",
+  "plan_includes_open_orders",
+  "create_material_request",
+  "create_purchase_order",
+  "cb_ap",
+  "auto_submit_purchase_order",
+  "auto_submit_limit_amount",
+  "run_mode",
+  "sec_qty",
+  "price_missing_action",
+  "class_thresholds",
+  "cb_qty",
+  "planning_buffer_days",
+  "plan_ahead_days",
+  "consolidation_window_days",
+  "sec_po",
+  "excluded_item_groups",
+  "max_lines_per_po",
+  "cb_po",
+  "delete_stale_draft_po_days",
+  "notify_role_on_exception",
+  "tab_wo",
+  "sec_wo",
+  "wo_only_from_production_plan",
+  "track_so_planned_qty",
+  "cb_wo",
+  "auto_cleanup_stale_wo",
+  "stale_wo_age_hours",
+  "sec_pl",
+  "job_card_requires_pick_list",
+  "sync_wo_status_from_job_card",
+  "block_expired_batches",
+  "warn_duplicate_pick_list",
+  "cb_pl",
+  "auto_stock_entry_on_pick_list",
+  "enable_pick_list_buffer",
+  "enable_spool_tracking",
+  "enable_combo_split",
+  "tab_shop",
+  "sec_shop",
+  "require_job_setup_verification",
+  "enable_yield_entry",
+  "cb_shop",
+  "enable_can_build"
+ ],
+ "fields": [
+  {
+   "fieldname": "tab_delivery",
+   "fieldtype": "Tab Break",
+   "label": "Delivery Date Planning"
+  },
+  {
+   "fieldname": "sec_edd",
+   "fieldtype": "Section Break",
+   "label": "Expected Delivery Date"
+  },
+  {
+   "default": "1",
+   "description": "Master switch for the date engine",
+   "fieldname": "enable_expected_delivery_date",
+   "fieldtype": "Check",
+   "label": "Enable Expected Delivery Date"
+  },
+  {
+   "default": "2",
+   "fieldname": "buffer_days",
+   "fieldtype": "Int",
+   "label": "Buffer Days"
+  },
+  {
+   "default": "8",
+   "fieldname": "working_hours_per_day",
+   "fieldtype": "Float",
+   "label": "Working Hours Per Day",
+   "precision": "2"
+  },
+  {
+   "default": "1",
+   "fieldname": "use_workstation_working_hours",
+   "fieldtype": "Check",
+   "label": "Use Workstation Working Hours"
+  },
+  {
+   "fieldname": "cb_edd",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "100",
+   "fieldname": "default_efficiency_percent",
+   "fieldtype": "Percent",
+   "label": "Default Efficiency %"
+  },
+  {
+   "default": "1",
+   "fieldname": "skip_holidays",
+   "fieldtype": "Check",
+   "label": "Skip Holidays"
+  },
+  {
+   "description": "Blank = the company default holiday list",
+   "fieldname": "holiday_list",
+   "fieldtype": "Link",
+   "label": "Holiday List",
+   "options": "Holiday List"
+  },
+  {
+   "default": "1",
+   "fieldname": "round_up_partial_days",
+   "fieldtype": "Check",
+   "label": "Round Up Part Days"
+  },
+  {
+   "fieldname": "sec_queue",
+   "fieldtype": "Section Break",
+   "label": "Queue"
+  },
+  {
+   "default": "1",
+   "fieldname": "consider_committed_orders",
+   "fieldtype": "Check",
+   "label": "Count Committed Orders"
+  },
+  {
+   "default": "Workstation",
+   "depends_on": "consider_committed_orders",
+   "fieldname": "queue_scope",
+   "fieldtype": "Select",
+   "label": "Queue Scope",
+   "options": "Workstation\nItem"
+  },
+  {
+   "fieldname": "cb_queue",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "depends_on": "consider_committed_orders",
+   "fieldname": "include_drafts_in_queue",
+   "fieldtype": "Check",
+   "label": "Include Drafts In Queue"
+  },
+  {
+   "fieldname": "sec_stock",
+   "fieldtype": "Section Break",
+   "label": "Stock"
+  },
+  {
+   "default": "Company Warehouses",
+   "fieldname": "stock_scope",
+   "fieldtype": "Select",
+   "label": "Stock Scope",
+   "options": "Company Warehouses\nAll Warehouses\nSales Order Item Warehouse"
+  },
+  {
+   "default": "1",
+   "fieldname": "subtract_reserved_qty",
+   "fieldtype": "Check",
+   "label": "Subtract Reserved Qty"
+  },
+  {
+   "default": "1",
+   "fieldname": "net_off_earlier_orders",
+   "fieldtype": "Check",
+   "label": "Net Off Earlier Orders"
+  },
+  {
+   "fieldname": "cb_stock",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "excluded_warehouses",
+   "fieldtype": "Table MultiSelect",
+   "label": "Excluded Warehouses",
+   "options": "MP Excluded Warehouse"
+  },
+  {
+   "fieldname": "sec_reservation",
+   "fieldtype": "Section Break",
+   "label": "Reservation"
+  },
+  {
+   "default": "1",
+   "fieldname": "reserve_stock_on_mps",
+   "fieldtype": "Check",
+   "label": "Reserve Stock On MPS"
+  },
+  {
+   "default": "30",
+   "fieldname": "reservation_expiry_days",
+   "fieldtype": "Int",
+   "label": "Reservation Expiry Days"
+  },
+  {
+   "fieldname": "cb_res",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "fieldname": "release_reservation_on_work_order",
+   "fieldtype": "Check",
+   "label": "Release On Work Order"
+  },
+  {
+   "fieldname": "sec_write",
+   "fieldtype": "Section Break",
+   "label": "Write Rule & Fallbacks"
+  },
+  {
+   "default": "Only If Empty",
+   "fieldname": "delivery_date_write_rule",
+   "fieldtype": "Select",
+   "label": "Delivery Date Write Rule",
+   "options": "Only If Empty\nAlways\nNever"
+  },
+  {
+   "fieldname": "cb_write",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "fallback_lead_days",
+   "fieldtype": "Int",
+   "label": "Fallback Lead Days"
+  },
+  {
+   "default": "100",
+   "fieldname": "max_lines_for_sync_compute",
+   "fieldtype": "Int",
+   "label": "Max Lines For Live Calculation"
+  },
+  {
+   "fieldname": "tab_purchase",
+   "fieldtype": "Tab Break",
+   "label": "Auto Purchase"
+  },
+  {
+   "fieldname": "sec_ap",
+   "fieldtype": "Section Break",
+   "label": "On Sales Order Submit"
+  },
+  {
+   "default": "1",
+   "fieldname": "enable_auto_purchase",
+   "fieldtype": "Check",
+   "label": "Enable Auto Purchase"
+  },
+  {
+   "default": "1",
+   "fieldname": "create_mps_on_so_submit",
+   "fieldtype": "Check",
+   "label": "Create MPS On SO Submit"
+  },
+  {
+   "default": "Per Period",
+   "depends_on": "create_mps_on_so_submit",
+   "description": "Per Period keeps one plan per company and period holding every open Sales Order, so the core MRP report counts each order once. Per Sales Order makes one plan per order.",
+   "fieldname": "mps_mode",
+   "fieldtype": "Select",
+   "label": "MPS Mode",
+   "options": "Per Period\nPer Sales Order"
+  },
+  {
+   "default": "Monthly",
+   "depends_on": "eval:doc.create_mps_on_so_submit && doc.mps_mode == 'Per Period'",
+   "fieldname": "mps_period",
+   "fieldtype": "Select",
+   "label": "MPS Period",
+   "options": "Monthly\nWeekly"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.create_mps_on_so_submit && doc.mps_mode == 'Per Period'",
+   "description": "Off: the plan only gains the order being submitted. On: it also sweeps in every other open order, which is what stops the core MRP report showing them as Ad-hoc.",
+   "fieldname": "plan_includes_open_orders",
+   "fieldtype": "Check",
+   "label": "Add Every Open Sales Order To The Plan"
+  },
+  {
+   "default": "1",
+   "fieldname": "create_material_request",
+   "fieldtype": "Check",
+   "label": "Create Material Request"
+  },
+  {
+   "default": "1",
+   "fieldname": "create_purchase_order",
+   "fieldtype": "Check",
+   "label": "Create Purchase Order"
+  },
+  {
+   "fieldname": "cb_ap",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "auto_submit_purchase_order",
+   "fieldtype": "Check",
+   "label": "Auto Submit Purchase Order"
+  },
+  {
+   "default": "0",
+   "depends_on": "auto_submit_purchase_order",
+   "fieldname": "auto_submit_limit_amount",
+   "fieldtype": "Currency",
+   "label": "Auto Submit Limit Amount"
+  },
+  {
+   "default": "Background",
+   "fieldname": "run_mode",
+   "fieldtype": "Select",
+   "label": "Run Mode",
+   "options": "Background\nSynchronous"
+  },
+  {
+   "fieldname": "sec_qty",
+   "fieldtype": "Section Break",
+   "label": "Quantity & Sourcing Rules"
+  },
+  {
+   "default": "Block",
+   "fieldname": "price_missing_action",
+   "fieldtype": "Select",
+   "label": "Price Missing Action",
+   "options": "Block\nLast Purchase Rate\nZero Rate"
+  },
+  {
+   "fieldname": "class_thresholds",
+   "fieldtype": "Table",
+   "label": "MOQ Class Thresholds",
+   "options": "MP Class Threshold"
+  },
+  {
+   "fieldname": "cb_qty",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "description": "Order this many days earlier than the need-by date",
+   "fieldname": "planning_buffer_days",
+   "fieldtype": "Int",
+   "label": "Planning Buffer Days"
+  },
+  {
+   "default": "365",
+   "fieldname": "plan_ahead_days",
+   "fieldtype": "Int",
+   "label": "Plan Ahead Days"
+  },
+  {
+   "default": "0",
+   "fieldname": "consolidation_window_days",
+   "fieldtype": "Int",
+   "label": "Consolidation Window Days"
+  },
+  {
+   "fieldname": "sec_po",
+   "fieldtype": "Section Break",
+   "label": "Purchase Order"
+  },
+  {
+   "fieldname": "excluded_item_groups",
+   "fieldtype": "Table MultiSelect",
+   "label": "Excluded Item Groups",
+   "options": "MP Excluded Item Group"
+  },
+  {
+   "default": "100",
+   "fieldname": "max_lines_per_po",
+   "fieldtype": "Int",
+   "label": "Max Lines Per PO"
+  },
+  {
+   "fieldname": "cb_po",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "7",
+   "fieldname": "delete_stale_draft_po_days",
+   "fieldtype": "Int",
+   "label": "Delete Stale Draft POs After (Days)"
+  },
+  {
+   "fieldname": "notify_role_on_exception",
+   "fieldtype": "Link",
+   "label": "Notify Role On Exception",
+   "options": "Role"
+  },
+  {
+   "fieldname": "tab_wo",
+   "fieldtype": "Tab Break",
+   "label": "Work Order & Pick List"
+  },
+  {
+   "fieldname": "sec_wo",
+   "fieldtype": "Section Break",
+   "label": "Work Order"
+  },
+  {
+   "default": "1",
+   "fieldname": "wo_only_from_production_plan",
+   "fieldtype": "Check",
+   "label": "Work Order Only From Production Plan"
+  },
+  {
+   "default": "1",
+   "fieldname": "track_so_planned_qty",
+   "fieldtype": "Check",
+   "label": "Track SO Planned Qty"
+  },
+  {
+   "fieldname": "cb_wo",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "auto_cleanup_stale_wo",
+   "fieldtype": "Check",
+   "label": "Auto Clean Up Stale Work Orders"
+  },
+  {
+   "default": "72",
+   "depends_on": "auto_cleanup_stale_wo",
+   "fieldname": "stale_wo_age_hours",
+   "fieldtype": "Int",
+   "label": "Stale Work Order Age (Hours)"
+  },
+  {
+   "fieldname": "sec_pl",
+   "fieldtype": "Section Break",
+   "label": "Pick List"
+  },
+  {
+   "default": "1",
+   "fieldname": "job_card_requires_pick_list",
+   "fieldtype": "Check",
+   "label": "Job Card Requires Pick List"
+  },
+  {
+   "default": "1",
+   "fieldname": "sync_wo_status_from_job_card",
+   "fieldtype": "Check",
+   "label": "Sync Work Order Status From Job Card"
+  },
+  {
+   "default": "1",
+   "description": "Refuse a Pick List row whose batch has expired",
+   "fieldname": "block_expired_batches",
+   "fieldtype": "Check",
+   "label": "Block Expired Batches"
+  },
+  {
+   "default": "1",
+   "description": "Warn when a Pick List already exists for the same Work Order",
+   "fieldname": "warn_duplicate_pick_list",
+   "fieldtype": "Check",
+   "label": "Warn On Duplicate Pick List"
+  },
+  {
+   "fieldname": "cb_pl",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "fieldname": "auto_stock_entry_on_pick_list",
+   "fieldtype": "Check",
+   "label": "Auto Stock Entry On Pick List"
+  },
+  {
+   "default": "1",
+   "fieldname": "enable_pick_list_buffer",
+   "fieldtype": "Check",
+   "label": "Enable Pick List Buffer"
+  },
+  {
+   "default": "1",
+   "fieldname": "enable_spool_tracking",
+   "fieldtype": "Check",
+   "label": "Enable Spool Tracking"
+  },
+  {
+   "default": "0",
+   "fieldname": "enable_combo_split",
+   "fieldtype": "Check",
+   "label": "Enable Combo Parts Split"
+  },
+  {
+   "fieldname": "tab_shop",
+   "fieldtype": "Tab Break",
+   "label": "Shop Floor & Quality"
+  },
+  {
+   "fieldname": "sec_shop",
+   "fieldtype": "Section Break",
+   "label": "Shop Floor"
+  },
+  {
+   "default": "0",
+   "fieldname": "require_job_setup_verification",
+   "fieldtype": "Check",
+   "label": "Require Job Setup Verification"
+  },
+  {
+   "default": "1",
+   "fieldname": "enable_yield_entry",
+   "fieldtype": "Check",
+   "label": "Enable Yield Entry"
+  },
+  {
+   "fieldname": "cb_shop",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "enable_can_build",
+   "fieldtype": "Check",
+   "label": "Enable Can Build"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-09-25 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Manufacturing Plus",
+ "name": "Manufacturing Control Setting",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Manufacturing Manager",
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Manufacturing User"
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
