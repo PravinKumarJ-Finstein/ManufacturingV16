@@ -140,3 +140,63 @@ class TestShortageNeverExceedsRequirement(FrappeTestCase):
 				component["required_qty"],
 				f"{component['item_code']}: short qty is larger than the requirement",
 			)
+
+
+class TestOwnReservationIsNotCountedAgainstItself(FrappeTestCase):
+	"""An order must not be told it is short of stock its own plan is holding."""
+
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		cls.data = seed()
+
+	def test_the_orders_own_reservation_is_ignored(self):
+		from manufacturing_plus.planning.stock import get_bin_qty, get_free_qty
+
+		company = self.data["company"]
+		on_hand = get_bin_qty([RM_SHORT], company).get(RM_SHORT, 0)
+		if on_hand <= 0:
+			return
+
+		plan = frappe.get_doc(
+			{
+				"doctype": "Master Production Schedule",
+				"company": company,
+				"posting_date": "2026-09-24",
+				"from_date": "2026-09-24",
+				"to_date": "2026-12-31",
+			}
+		)
+		plan.append(
+			"items",
+			{
+				"item_code": FG,
+				"planned_qty": 1,
+				"delivery_date": "2026-12-01",
+				"bom_no": self.data["bom"],
+				"uom": "Nos",
+			},
+		)
+		plan.flags.ignore_permissions = True
+		plan.insert(ignore_permissions=True)
+
+		frappe.get_doc(
+			{
+				"doctype": "MPS Stock Reservation",
+				"master_production_schedule": plan.name,
+				"company": company,
+				"item_code": RM_SHORT,
+				"warehouse": self.data["warehouse"],
+				"reserved_qty": 10,
+				"sales_order": "_MP-SO-OWN",
+				"expiry_date": "2026-12-31",
+				"status": "Active",
+			}
+		).insert(ignore_permissions=True)
+
+		mine = get_free_qty([RM_SHORT], company, exclude_sales_order="_MP-SO-OWN")[RM_SHORT]
+		theirs = get_free_qty([RM_SHORT], company)[RM_SHORT]
+
+		self.assertAlmostEqual(
+			mine - theirs, 10.0, places=3, msg="the order's own hold was deducted from itself"
+		)

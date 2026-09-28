@@ -67,8 +67,14 @@ def get_bin_qty(items: list[str], company: str | None = None, warehouse: str | N
 	return {r.item_code: flt(r.qty) for r in rows}
 
 
-def get_mps_reserved_qty(items: list[str], company: str | None = None) -> dict:
-	"""Qty held by other MPS documents through our own reservation ledger."""
+def get_mps_reserved_qty(
+	items: list[str], company: str | None = None, exclude_sales_order: str | None = None
+) -> dict:
+	"""Qty held by **other** orders' plans.
+
+	A reservation this same Sales Order made is its own hold, not a competitor's: counting
+	it would make the order look short of stock it is already holding for itself.
+	"""
 	if not items or not cint(setting("reserve_stock_on_mps", 1)):
 		return {}
 
@@ -77,6 +83,10 @@ def get_mps_reserved_qty(items: list[str], company: str | None = None) -> dict:
 	if company:
 		condition = "and company = %(company)s"
 		values["company"] = company
+
+	if exclude_sales_order:
+		condition += " and ifnull(sales_order, '') != %(exclude_so)s"
+		values["exclude_so"] = exclude_sales_order
 
 	rows = frappe.db.sql(
 		f"""
@@ -150,7 +160,7 @@ def get_free_qty(
 ) -> dict:
 	"""On hand - Bin reservations - MPS reservations - earlier committed demand."""
 	on_hand = get_bin_qty(items, company, warehouse)
-	mps_reserved = get_mps_reserved_qty(items, company)
+	mps_reserved = get_mps_reserved_qty(items, company, exclude_sales_order)
 	committed = get_committed_qty(items, company, before_date, exclude_sales_order)
 
 	return {
