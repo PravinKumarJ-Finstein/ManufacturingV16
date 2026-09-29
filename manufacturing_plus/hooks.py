@@ -213,12 +213,12 @@ app_license = "mit"
 
 # Request Events
 # ----------------
-# before_request = ["manufacturing_plus.utils.before_request"]
+before_request = ["manufacturing_plus.overrides.mrp_report.apply"]
 # after_request = ["manufacturing_plus.utils.after_request"]
 
 # Job Events
 # ----------
-# before_job = ["manufacturing_plus.utils.before_job"]
+before_job = ["manufacturing_plus.overrides.mrp_report.apply"]
 # after_job = ["manufacturing_plus.utils.after_job"]
 
 # User Data Protection

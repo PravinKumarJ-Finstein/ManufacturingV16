@@ -45,6 +45,7 @@
   "mps_mode",
   "mps_period",
   "plan_includes_open_orders",
+  "mrp_only_planned_orders",
   "create_material_request",
   "create_purchase_order",
   "cb_ap",
@@ -319,6 +320,13 @@
    "fieldname": "plan_includes_open_orders",
    "fieldtype": "Check",
    "label": "Add Every Open Sales Order To The Plan"
+  },
+  {
+   "default": "1",
+   "description": "On: with an MPS selected, the core MRP report shows only that plan's own rows. Off: it also lists every other open Sales Order for the same items as Ad-hoc, which double counts demand when each order has its own plan.",
+   "fieldname": "mrp_only_planned_orders",
+   "fieldtype": "Check",
+   "label": "MRP Report: Only Orders In The Plan"
   },
   {
    "default": "1",
