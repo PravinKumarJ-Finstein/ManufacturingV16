@@ -104,18 +104,30 @@ def clean_up(mps: str) -> dict:
 
 
 def on_run_trash(doc, method=None):
-	"""Auto Purchase Run on_trash: keep the purchase documents, drop the planning ones."""
+	"""Auto Purchase Run on_trash: the run takes everything it produced with it.
+
+	A submitted Purchase Order is a commitment to a supplier, so it is the one thing that
+	cannot go: while one exists, the run cannot be deleted at all. Draft and cancelled
+	Purchase Orders are deleted with the run, as are the Material Requests, the demand rows,
+	the stock it reserved and the exceptions it raised. The plan itself stays, and only
+	loses the link.
+	"""
+	block_delete_if_ordered(doc.name)
 	removed = clean_up_run(doc.name)
 
 	lines = []
-	if removed["unlinked"]:
-		lines.append(
-			_("{0} purchase document(s) kept, with the link to this run cleared").format(removed["unlinked"])
-		)
+	if removed["purchase_orders"]:
+		lines.append(_("{0} Purchase Order(s) deleted").format(removed["purchase_orders"]))
+	if removed["material_requests"]:
+		lines.append(_("{0} Material Request(s) deleted").format(removed["material_requests"]))
 	if removed["demands"]:
-		lines.append(_("{0} demand row(s) removed").format(removed["demands"]))
+		lines.append(_("{0} demand row(s) deleted").format(removed["demands"]))
+	if removed["reservations"]:
+		lines.append(_("{0} stock reservation(s) released and deleted").format(removed["reservations"]))
 	if removed["exceptions"]:
-		lines.append(_("{0} exception(s) removed").format(removed["exceptions"]))
+		lines.append(_("{0} exception(s) deleted").format(removed["exceptions"]))
+	if removed["unlinked"]:
+		lines.append(_("{0} plan(s) kept, with the link to this run cleared").format(removed["unlinked"]))
 
 	if lines:
 		frappe.msgprint(
@@ -125,10 +137,62 @@ def on_run_trash(doc, method=None):
 		)
 
 
-def clean_up_run(run: str) -> dict:
-	removed = {"unlinked": 0, "demands": 0, "exceptions": 0}
+def submitted_purchase_orders(run: str) -> list[str]:
+	"""Purchase Orders of this run that are already with the supplier."""
+	return frappe.get_all(
+		"Purchase Order", filters={"mp_auto_purchase_run": run, "docstatus": 1}, pluck="name"
+	)
 
-	# the plan points back at the run; that link would block the delete
+
+def block_delete_if_ordered(run: str) -> None:
+	ordered = submitted_purchase_orders(run)
+	if not ordered:
+		return
+
+	frappe.throw(
+		_("{0} cannot be deleted: it has submitted Purchase Order(s) {1}.").format(
+			frappe.bold(run), ", ".join(frappe.bold(name) for name in ordered)
+		)
+		+ "<br><br>"
+		+ _("Cancel those Purchase Orders first, then delete this run."),
+		title=_("Purchase Order already placed"),
+	)
+
+
+def reserved_by_run(run: str) -> list[str]:
+	"""Reservations this run placed: those of its Sales Order, and those of its plan(s)."""
+	plans = frappe.get_all("Master Production Schedule", filters={"mp_auto_purchase_run": run}, pluck="name")
+	sales_order = frappe.db.get_value("Auto Purchase Run", run, "sales_order")
+
+	names = set()
+	if sales_order:
+		names.update(
+			frappe.get_all("MPS Stock Reservation", filters={"sales_order": sales_order}, pluck="name")
+		)
+	if plans:
+		names.update(
+			frappe.get_all(
+				"MPS Stock Reservation", filters={"master_production_schedule": ["in", plans]}, pluck="name"
+			)
+		)
+
+	return sorted(names)
+
+
+def clean_up_run(run: str) -> dict:
+	removed = {
+		"unlinked": 0,
+		"demands": 0,
+		"exceptions": 0,
+		"reservations": 0,
+		"material_requests": 0,
+		"purchase_orders": 0,
+	}
+
+	# read first: clearing the plan link below would hide the plan's own reservations
+	reservations = reserved_by_run(run)
+
+	# the plan points back at the run; the plan stays, the link does not
 	for name in frappe.get_all(
 		"Master Production Schedule", filters={"mp_auto_purchase_run": run}, pluck="name"
 	):
@@ -137,28 +201,40 @@ def clean_up_run(run: str) -> dict:
 		)
 		removed["unlinked"] += 1
 
-	for doctype in ("Material Request", "Purchase Order"):
-		for name in frappe.get_all(doctype, filters={"mp_auto_purchase_run": run}, pluck="name"):
-			frappe.db.set_value(doctype, name, "mp_auto_purchase_run", None, update_modified=False)
-			removed["unlinked"] += 1
-
-	for row in frappe.get_all(
-		"Sales Order Material Demand",
-		filters={"run": run},
-		fields=["name", "material_request", "purchase_order"],
-	):
-		if row.material_request or row.purchase_order:
-			frappe.db.set_value("Sales Order Material Demand", row.name, "run", None, update_modified=False)
-			removed["unlinked"] += 1
-		else:
-			frappe.delete_doc("Sales Order Material Demand", row.name, force=True, ignore_permissions=True)
-			removed["demands"] += 1
-
+	# deleted in link order: what points at a document goes before the document itself
 	for name in frappe.get_all("Auto Purchase Exception", filters={"run": run}, pluck="name"):
 		frappe.delete_doc("Auto Purchase Exception", name, force=True, ignore_permissions=True)
 		removed["exceptions"] += 1
 
+	for name in frappe.get_all("Sales Order Material Demand", filters={"run": run}, pluck="name"):
+		frappe.delete_doc("Sales Order Material Demand", name, force=True, ignore_permissions=True)
+		removed["demands"] += 1
+
+	# the stock this run held goes back: the hold only ever existed because of the run
+	for name in reservations:
+		frappe.delete_doc("MPS Stock Reservation", name, force=True, ignore_permissions=True)
+		removed["reservations"] += 1
+
+	for doctype, key in (("Purchase Order", "purchase_orders"), ("Material Request", "material_requests")):
+		for name in frappe.get_all(doctype, filters={"mp_auto_purchase_run": run}, pluck="name"):
+			_cancel_and_delete(doctype, name)
+			removed[key] += 1
+
 	return removed
+
+
+def _cancel_and_delete(doctype: str, name: str) -> None:
+	"""A submitted document has to be cancelled before it can go.
+
+	Purchase Orders never reach here submitted — block_delete_if_ordered stops the delete
+	first. A submitted Material Request can, and is cancelled on the way out.
+	"""
+	doc = frappe.get_doc(doctype, name)
+	if doc.docstatus == 1:
+		doc.flags.ignore_permissions = True
+		doc.cancel()
+
+	frappe.delete_doc(doctype, name, force=True, ignore_permissions=True)
 
 
 @frappe.whitelist()
@@ -172,18 +248,18 @@ def get_run_impact(run: str) -> dict:
 	purchase_orders = frappe.get_all(
 		"Purchase Order", filters={"mp_auto_purchase_run": run}, fields=["name", "docstatus", "grand_total"]
 	)
+	blocked_by = [p.name for p in purchase_orders if p.docstatus == 1]
 
 	return {
 		"master_production_schedules": frappe.get_all(
 			"Master Production Schedule", filters={"mp_auto_purchase_run": run}, pluck="name"
 		),
 		"material_requests": material_requests,
+		"submitted_material_requests": [m.name for m in material_requests if m.docstatus == 1],
 		"purchase_orders": purchase_orders,
-		"submitted_purchase_orders": [p.name for p in purchase_orders if p.docstatus == 1],
+		"submitted_purchase_orders": blocked_by,
+		"can_delete": not blocked_by,
 		"demand_rows": frappe.db.count("Sales Order Material Demand", {"run": run}),
-		"demand_rows_kept": frappe.db.count(
-			"Sales Order Material Demand",
-			{"run": run, "purchase_order": ["is", "set"]},
-		),
+		"reservations": len(reserved_by_run(run)),
 		"exceptions": frappe.db.count("Auto Purchase Exception", {"run": run}),
 	}

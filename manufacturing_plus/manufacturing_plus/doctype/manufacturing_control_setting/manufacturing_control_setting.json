@@ -296,13 +296,13 @@
    "label": "Create MPS On SO Submit"
   },
   {
-   "default": "Per Period",
+   "default": "Per Sales Order",
    "depends_on": "create_mps_on_so_submit",
-   "description": "Per Period keeps one plan per company and period holding every open Sales Order, so the core MRP report counts each order once. Per Sales Order makes one plan per order.",
+   "description": "Per Sales Order gives every submitted order its own new plan. Per Period keeps one shared plan per company and period that every order of that period joins, which is what the core MRP report expects.",
    "fieldname": "mps_mode",
    "fieldtype": "Select",
    "label": "MPS Mode",
-   "options": "Per Period\nPer Sales Order"
+   "options": "Per Sales Order\nPer Period"
   },
   {
    "default": "Monthly",

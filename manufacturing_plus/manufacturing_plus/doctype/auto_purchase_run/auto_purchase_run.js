@@ -33,7 +33,7 @@ function add_rerun_button(frm) {
 	if (frm.doc.status !== "Completed") button.addClass("btn-primary");
 }
 
-// Say what a delete would touch, before it happens.
+// Say what a delete would take with it — and stop it when a Purchase Order is already placed.
 function guard_delete(frm) {
 	if (frm.is_new() || frm._mp_delete_guarded) return;
 	frm._mp_delete_guarded = true;
@@ -45,30 +45,46 @@ function guard_delete(frm) {
 			args: { run: frm.doc.name },
 			callback(r) {
 				const impact = r.message || {};
+				const ordered = impact.submitted_purchase_orders || [];
+
+				if (ordered.length) {
+					frappe.msgprint({
+						title: __("Purchase Order already placed"),
+						indicator: "red",
+						message:
+							__("{0} cannot be deleted: it has submitted Purchase Order(s) {1}.", [
+								frm.doc.name.bold(),
+								ordered.join(", ").bold(),
+							]) +
+							"<br><br>" +
+							__("Cancel those Purchase Orders first, then delete this run."),
+					});
+					return;
+				}
+
 				const lines = [];
-
-				const mrs = (impact.material_requests || []).map((d) => d.name);
 				const pos = (impact.purchase_orders || []).map((d) => d.name);
-
+				const mrs = (impact.material_requests || []).map((d) => d.name);
+				const submitted_mrs = impact.submitted_material_requests || [];
 				const plans = impact.master_production_schedules || [];
-				if (plans.length) lines.push(__("Plans kept, link cleared: {0}", [plans.join(", ")]));
-				if (mrs.length) lines.push(__("Material Requests kept, link cleared: {0}", [mrs.join(", ")]));
-				if (pos.length) lines.push(__("Purchase Orders kept, link cleared: {0}", [pos.join(", ")]));
-				if (impact.submitted_purchase_orders && impact.submitted_purchase_orders.length) {
+
+				if (pos.length) lines.push(__("Purchase Orders deleted: {0}", [pos.join(", ")]));
+				if (mrs.length) lines.push(__("Material Requests deleted: {0}", [mrs.join(", ")]));
+				if (submitted_mrs.length) {
 					lines.push(
-						`<b>${__("Submitted Purchase Orders stay open with the supplier: {0}", [
-							impact.submitted_purchase_orders.join(", "),
+						`<b>${__("Submitted Material Requests cancelled first: {0}", [
+							submitted_mrs.join(", "),
 						])}</b>`
 					);
 				}
-				if (impact.demand_rows) {
-					const removed = impact.demand_rows - (impact.demand_rows_kept || 0);
-					lines.push(__("{0} demand row(s) removed, {1} kept because they led to a purchase", [
-						removed,
-						impact.demand_rows_kept || 0,
-					]));
+				if (impact.demand_rows) lines.push(__("{0} demand row(s) deleted", [impact.demand_rows]));
+				if (impact.reservations) {
+					lines.push(
+						__("{0} stock reservation(s) released and deleted", [impact.reservations])
+					);
 				}
-				if (impact.exceptions) lines.push(__("{0} exception(s) removed", [impact.exceptions]));
+				if (impact.exceptions) lines.push(__("{0} exception(s) deleted", [impact.exceptions]));
+				if (plans.length) lines.push(__("Plans kept, link cleared: {0}", [plans.join(", ")]));
 
 				if (!lines.length) {
 					original();
@@ -80,7 +96,7 @@ function guard_delete(frm) {
 						"<br><br>" +
 						lines.join("<br>") +
 						"<br><br>" +
-						__("No Material Request or Purchase Order is deleted. Continue?"),
+						__("This cannot be undone. Continue?"),
 					original
 				);
 			},

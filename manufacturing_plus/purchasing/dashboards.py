@@ -6,6 +6,7 @@ from frappe import _
 
 OUR_GROUPS = [
 	{"label": _("Auto Purchase"), "items": ["Auto Purchase Run"]},
+	{"label": _("Material"), "items": ["MPS Stock Reservation"]},
 ]
 
 

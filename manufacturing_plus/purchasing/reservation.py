@@ -10,8 +10,9 @@ from manufacturing_plus.planning.settings import setting
 
 def reserve_for_mps(mps_name: str, company: str, rows: list[dict], sales_order: str | None = None) -> int:
 	"""rows = [{item_code, warehouse, qty, sales_order_item}] — qty actually taken from stock."""
-	if not cint(setting("reserve_stock_on_mps", 1)):
-		return 0
+	# With reserving switched off the rows are still written, as Inactive: they hold nothing
+	# back, and anyone can set one to Active later.
+	status = "Active" if cint(setting("reserve_stock_on_mps", 1)) else "Inactive"
 
 	expiry = add_days(nowdate(), cint(setting("reservation_expiry_days", 30)) or 30)
 	created = 0
@@ -28,7 +29,7 @@ def reserve_for_mps(mps_name: str, company: str, rows: list[dict], sales_order: 
 				"master_production_schedule": mps_name,
 				"item_code": row.get("item_code"),
 				"sales_order_item": row.get("sales_order_item"),
-				"status": "Active",
+				"status": ["in", ("Active", "Inactive")],
 			},
 			"name",
 		)
@@ -47,7 +48,7 @@ def reserve_for_mps(mps_name: str, company: str, rows: list[dict], sales_order: 
 				"sales_order": sales_order,
 				"sales_order_item": row.get("sales_order_item"),
 				"expiry_date": expiry,
-				"status": "Active",
+				"status": status,
 			}
 		)
 		doc.insert(ignore_permissions=True)

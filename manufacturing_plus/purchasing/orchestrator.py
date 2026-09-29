@@ -83,10 +83,18 @@ def _execute(run, so) -> None:
 		update_modified=False,
 	)
 
+	notes = []
+
 	try:
 		mps = run.master_production_schedule
+		if mps and not frappe.db.exists("Master Production Schedule", mps):
+			# the plan was deleted after the run: make a fresh one below
+			mps = None
+
 		if not mps and is_enabled("create_mps_on_so_submit"):
 			mps = create_mps(so)
+			if not mps:
+				notes.append(_no_mps_reason(so))
 
 		if mps:
 			run.db_set("master_production_schedule", mps, update_modified=False)
@@ -106,6 +114,9 @@ def _execute(run, so) -> None:
 
 		_close_resolved_exceptions(so.name)
 		_refresh_totals(run, so, exceptions)
+
+		if notes:
+			run.db_set("error_log", "\n".join(notes), update_modified=False)
 	except Exception:
 		run.reload()
 		run.status = "Failed"
@@ -133,23 +144,24 @@ def _refresh_totals(run, so, exceptions: int) -> None:
 
 
 def create_mps(so) -> str | None:
-	"""The plan this Sales Order belongs to.
+	"""The plan for this Sales Order.
 
-	Per Period (default): one plan per company and period, holding **every** open Sales
-	Order. That is what the core MRP report expects — it only leaves out the orders listed
+	Per Sales Order (default): every submitted order gets **its own new plan**. An order is
+	never added to a plan that already exists for another order.
+
+	Per Period: one shared plan per company and period, which every order of that period
+	joins. That is what the core MRP report expects — it only leaves out the orders listed
 	in the plan you filter on, so anything missing comes back as an "Ad-hoc" row and the
-	same demand is counted twice.
-
-	Per Sales Order: one plan per order. Simpler to read, but the core MRP report will show
-	every other open order as Ad-hoc.
+	same demand is counted twice. Use it only if you read that report.
 	"""
-	if setting("mps_mode", "Per Period") == "Per Sales Order":
-		return _mps_for_sales_order(so)
+	if setting("mps_mode", "Per Sales Order") == "Per Period":
+		return _mps_for_period(so)
 
-	return _mps_for_period(so)
+	return _mps_for_sales_order(so)
 
 
 def _mps_for_sales_order(so) -> str | None:
+	"""A plan of this order's own. Only a plan already made for **this** order is reused."""
 	existing = frappe.db.get_value(
 		"Master Production Schedule", {"mp_sales_order": so.name, "docstatus": ["<", 2]}, "name"
 	)
@@ -174,6 +186,21 @@ def _mps_for_sales_order(so) -> str | None:
 	# left as a draft on purpose: submit queues make_mrp, which v16.34.2 does not have
 	mps.insert(ignore_permissions=True)
 	return mps.name
+
+
+def _no_mps_reason(so) -> str:
+	"""Why no plan came out of this order — so a missing MPS is never silent."""
+	if not is_enabled("create_mps_on_so_submit"):
+		return _("No plan was made: Create MPS On SO Submit is off.")
+
+	without_bom = [item.item_code for item in so.items if not get_default_bom(item.item_code)]
+	if len(without_bom) == len(so.items):
+		return _(
+			"No plan was made: none of this order's items has a default BOM ({0}). "
+			"A plan can only hold items that are manufactured."
+		).format(", ".join(sorted(set(without_bom))))
+
+	return _("No plan was made for this order.")
 
 
 @frappe.request_cache
