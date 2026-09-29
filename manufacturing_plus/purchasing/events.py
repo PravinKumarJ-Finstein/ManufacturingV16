@@ -3,6 +3,7 @@
 """Document hooks for the purchasing side."""
 
 import frappe
+from frappe import _
 from frappe.utils import cint, flt, getdate
 
 from manufacturing_plus.planning.settings import is_enabled, setting
@@ -15,6 +16,8 @@ def enqueue_auto_purchase(doc, method=None):
 		return
 
 	from manufacturing_plus.purchasing.orchestrator import run_for_sales_order
+
+	warn_items_without_bom(doc)
 
 	if setting("run_mode", "Background") == "Synchronous":
 		run_for_sales_order(doc.name)
@@ -165,3 +168,39 @@ def close_demand_on_receipt(doc, method=None):
 
 def release_reservation_on_work_order(doc, method=None):
 	reservation.release_for_work_order(doc, method)
+
+
+def warn_items_without_bom(doc) -> None:
+	"""Say so at submit time when a line cannot be planned or bought.
+
+	An MPS explodes a BOM into raw material, so a line with no default BOM has nothing to
+	plan and nothing to buy: no plan row, no demand row, no Material Request, no Purchase
+	Order. The delivery date is still worked out for it, from the item's own lead time.
+	"""
+	from manufacturing_plus.planning.expected_delivery import get_default_bom
+
+	without_bom = sorted({item.item_code for item in doc.items if not get_default_bom(item.item_code)})
+	if not without_bom:
+		return
+
+	items = ", ".join(frappe.bold(code) for code in without_bom)
+	everything = len(without_bom) == len({item.item_code for item in doc.items})
+
+	if everything:
+		message = _("No item on this order has a default BOM: {0}.").format(items) + "<br><br>"
+		if is_enabled("create_mps_on_so_submit"):
+			message += _("No Master Production Schedule and no automatic Purchase Order are created.")
+		else:
+			message += _("No automatic Purchase Order is created.")
+	else:
+		message = _("These items have no default BOM: {0}.").format(items) + "<br><br>"
+		message += _(
+			"They are left out of the Master Production Schedule and of the automatic purchase. "
+			"The rest of the order is planned as usual."
+		)
+
+	message += "<br><br>" + _(
+		"Set a default BOM on the item to have it planned and its raw material purchased."
+	)
+
+	frappe.msgprint(message, title=_("No BOM: nothing planned for this item"), indicator="orange")
