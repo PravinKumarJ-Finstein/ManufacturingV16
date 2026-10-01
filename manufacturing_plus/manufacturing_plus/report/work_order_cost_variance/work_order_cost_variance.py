@@ -228,6 +228,9 @@ def build_row(wo, filters, boms, operations, job_cards, consumed, required) -> d
 	standard_total = standard_material + standard_operation
 	actual_total = actual_material + actual_operation
 
+	standard_unit = standard_total / costed_qty if costed_qty else 0.0
+	actual_unit = actual_total / costed_qty if costed_qty else 0.0
+
 	return {
 		"work_order": wo.name,
 		"status": wo.status,
@@ -248,15 +251,19 @@ def build_row(wo, filters, boms, operations, job_cards, consumed, required) -> d
 		"standard_material_cost": standard_material,
 		"actual_material_cost": actual_material,
 		"material_variance": actual_material - standard_material,
+		"material_variance_percent": percent(actual_material - standard_material, standard_material),
 		"standard_operation_cost": standard_operation,
 		"actual_operation_cost": actual_operation,
 		"operation_variance": actual_operation - standard_operation,
+		"operation_variance_percent": percent(actual_operation - standard_operation, standard_operation),
 		"standard_total_cost": standard_total,
 		"actual_total_cost": actual_total,
 		"total_variance": actual_total - standard_total,
 		"variance_percent": percent(actual_total - standard_total, standard_total),
-		"standard_cost_per_unit": standard_total / costed_qty if costed_qty else 0.0,
-		"actual_cost_per_unit": actual_total / costed_qty if costed_qty else 0.0,
+		"standard_cost_per_unit": standard_unit,
+		"actual_cost_per_unit": actual_unit,
+		"cost_per_unit_variance": actual_unit - standard_unit,
+		"cost_per_unit_variance_percent": percent(actual_unit - standard_unit, standard_unit),
 	}
 
 
@@ -342,6 +349,12 @@ def get_columns() -> list:
 			"width": 150,
 		},
 		{
+			"label": _("Material Variance %"),
+			"fieldname": "material_variance_percent",
+			"fieldtype": "Percent",
+			"width": 150,
+		},
+		{
 			"label": _("Standard Operation Cost"),
 			"fieldname": "standard_operation_cost",
 			"fieldtype": "Currency",
@@ -361,6 +374,12 @@ def get_columns() -> list:
 			"fieldtype": "Currency",
 			"options": "currency",
 			"width": 155,
+		},
+		{
+			"label": _("Operation Variance %"),
+			"fieldname": "operation_variance_percent",
+			"fieldtype": "Percent",
+			"width": 160,
 		},
 		{
 			"label": _("Standard Manufacturing Cost"),
@@ -397,6 +416,19 @@ def get_columns() -> list:
 			"fieldtype": "Currency",
 			"options": "currency",
 			"width": 150,
+		},
+		{
+			"label": _("Cost / Unit Variance"),
+			"fieldname": "cost_per_unit_variance",
+			"fieldtype": "Currency",
+			"options": "currency",
+			"width": 160,
+		},
+		{
+			"label": _("Cost / Unit Variance %"),
+			"fieldname": "cost_per_unit_variance_percent",
+			"fieldtype": "Percent",
+			"width": 165,
 		},
 		{"label": _("Currency"), "fieldname": "currency", "fieldtype": "Data", "width": 90, "hidden": 1},
 	]

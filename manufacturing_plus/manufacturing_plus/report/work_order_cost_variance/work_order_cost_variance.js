@@ -68,11 +68,15 @@ frappe.query_reports["Work Order Cost Variance"] = {
 
 		const variance_fields = [
 			"material_variance",
+			"material_variance_percent",
 			"operation_variance",
+			"operation_variance_percent",
 			"total_variance",
 			"variance_percent",
 			"time_variance_mins",
 			"time_variance_percent",
+			"cost_per_unit_variance",
+			"cost_per_unit_variance_percent",
 		];
 
 		if (data && variance_fields.includes(column.fieldname)) {
