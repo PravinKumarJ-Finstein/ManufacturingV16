@@ -51,6 +51,14 @@ def track_planned_qty(doc, method=None):
 	if not is_enabled("track_so_planned_qty"):
 		return
 
+	# the field is ours, and a Production Plan must never fail to submit because it is absent
+	if not frappe.db.has_column("Sales Order Item", "mp_planned_qty"):
+		frappe.log_error(
+			title="Planned qty not tracked",
+			message="Sales Order Item.mp_planned_qty is missing. Run bench migrate to create it.",
+		)
+		return
+
 	planned: dict[str, float] = {}
 	for row in doc.get("po_items") or []:
 		if row.get("sales_order_item"):
