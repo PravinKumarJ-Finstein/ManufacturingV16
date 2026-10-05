@@ -215,6 +215,17 @@ CUSTOM_FIELDS = {
 			"allow_on_submit": 1,
 			"no_copy": 1,
 		},
+		{
+			"fieldname": "mp_planned_qty",
+			"fieldtype": "Float",
+			"label": "Planned Qty (Production Plan)",
+			"description": "Qty of this line taken into a submitted Production Plan.",
+			"insert_after": "mp_delivery_gap_days",
+			"read_only": 1,
+			"allow_on_submit": 1,
+			"no_copy": 1,
+			"print_hide": 1,
+		},
 	],
 	"Sales Order": [
 		{
