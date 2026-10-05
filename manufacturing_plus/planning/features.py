@@ -118,8 +118,17 @@ def apply_permissions() -> list[str]:
 	return changed
 
 
+CLIENT_SWITCHES = ("custom_wo_pick_list",)
+
+
 def hide_disabled_doctypes(bootinfo):
-	"""extend_bootinfo: keep switched-off doctypes out of the search bar and the desk."""
+	"""extend_bootinfo: keep switched-off doctypes out of the search bar and the desk.
+
+	The same pass hands the client the few switches its scripts need, so a form does not
+	have to fetch the setting before it can decide which buttons to show.
+	"""
+	bootinfo["manufacturing_plus"] = {name: 1 if is_enabled(name) else 0 for name in CLIENT_SWITCHES}
+
 	hidden = set(disabled_doctypes())
 	if not hidden or not bootinfo.get("user"):
 		return
