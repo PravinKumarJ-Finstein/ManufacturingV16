@@ -274,6 +274,7 @@ doc_events = {
 	"Sales Order": {
 		"before_validate": "manufacturing_plus.planning.sales_order.set_expected_delivery_dates",
 		"before_update_after_submit": "manufacturing_plus.planning.sales_order.recompute_after_submit",
+		"on_update_after_submit": "manufacturing_plus.purchasing.events.refresh_after_update_items",
 		"on_submit": "manufacturing_plus.purchasing.events.enqueue_auto_purchase",
 		"on_cancel": "manufacturing_plus.purchasing.events.release_on_sales_order_cancel",
 	},
