@@ -125,3 +125,56 @@ function fill_delivery_dates(frm, { overwrite = false, silent = false, rows = nu
 		},
 	});
 }
+
+// --- Forecast orders (Kaynes selling flow) ---
+frappe.ui.form.on("Sales Order", {
+	refresh(frm) {
+		apply_forecast_rules(frm);
+		show_forecast_coverage(frm);
+	},
+
+	mp_is_forecast(frm) {
+		apply_forecast_rules(frm);
+	},
+});
+
+// A forecast has no customer PO behind it, so the PO fields cannot be mandatory.
+function apply_forecast_rules(frm) {
+	const forecast = !!frm.doc.mp_is_forecast;
+
+	["po_no", "po_date"].forEach((field) => {
+		frm.set_df_property(field, "reqd", forecast ? 0 : 1);
+	});
+	frm.refresh_fields(["po_no", "po_date"]);
+
+	if (forecast && frm.doc.docstatus < 2) {
+		frm.dashboard.add_indicator(__("Forecast Order"), "blue");
+	}
+}
+
+function show_forecast_coverage(frm) {
+	if (!frm.doc.mp_is_forecast || frm.doc.docstatus !== 1) return;
+
+	frappe.call({
+		method: "manufacturing_plus.selling.forecast.get_forecast_coverage",
+		args: { sales_order: frm.doc.name },
+		callback(r) {
+			const rows = (r.message || {}).rows || [];
+			const confirmed = rows.filter((row) => flt(row.confirmed_qty) > 0);
+			if (!confirmed.length) return;
+
+			const lines = confirmed
+				.map((row) =>
+					__("{0}: {1} of {2} confirmed, {3} left", [
+						row.item_code,
+						format_number(row.confirmed_qty),
+						format_number(row.forecast_qty),
+						format_number(row.remaining_qty),
+					])
+				)
+				.join("<br>");
+
+			frm.dashboard.add_comment(lines, "blue", true);
+		},
+	});
+}
