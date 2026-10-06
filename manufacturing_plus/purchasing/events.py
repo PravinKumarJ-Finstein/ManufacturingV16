@@ -15,17 +15,6 @@ def enqueue_auto_purchase(doc, method=None):
 	if not is_enabled("enable_auto_purchase"):
 		return
 
-	if doc.get("mp_is_forecast") and not is_enabled("plan_forecast_orders"):
-		# a forecast is demand the customer has not committed to: nothing is bought for it
-		frappe.msgprint(
-			_("This is a forecast order, so no plan and no purchase are created.")
-			+ "<br>"
-			+ _("Switch on Plan And Buy For Forecast Orders to change that."),
-			indicator="blue",
-			alert=True,
-		)
-		return
-
 	from manufacturing_plus.purchasing.orchestrator import run_for_sales_order
 
 	warn_items_without_bom(doc)
@@ -57,9 +46,6 @@ def refresh_after_update_items(doc, method=None):
 		return
 
 	if not is_enabled("refresh_plan_on_update_items"):
-		return
-
-	if doc.get("mp_is_forecast") and not is_enabled("plan_forecast_orders"):
 		return
 
 	from manufacturing_plus.purchasing.orchestrator import rerun, sync_mps_with_sales_order

@@ -273,17 +273,10 @@ after_migrate = "manufacturing_plus.setup.install.after_migrate"
 doc_events = {
 	"Sales Order": {
 		"before_validate": "manufacturing_plus.planning.sales_order.set_expected_delivery_dates",
-		"before_submit": "manufacturing_plus.selling.forecast.set_forecast_backup",
 		"before_update_after_submit": "manufacturing_plus.planning.sales_order.recompute_after_submit",
 		"on_update_after_submit": "manufacturing_plus.purchasing.events.refresh_after_update_items",
-		"on_submit": [
-			"manufacturing_plus.selling.forecast.consume_forecast",
-			"manufacturing_plus.purchasing.events.enqueue_auto_purchase",
-		],
-		"on_cancel": [
-			"manufacturing_plus.selling.forecast.release_forecast",
-			"manufacturing_plus.purchasing.events.release_on_sales_order_cancel",
-		],
+		"on_submit": "manufacturing_plus.purchasing.events.enqueue_auto_purchase",
+		"on_cancel": "manufacturing_plus.purchasing.events.release_on_sales_order_cancel",
 	},
 	"Purchase Order": {
 		"on_submit": "manufacturing_plus.purchasing.events.sync_dates_from_purchase_order",
