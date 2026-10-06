@@ -19,6 +19,7 @@ from manufacturing_plus.planning.expected_delivery import get_default_bom
 from manufacturing_plus.planning.lead_time import get_item_lead_days, get_rm_shortage
 from manufacturing_plus.planning.settings import is_enabled, setting
 from manufacturing_plus.purchasing import reservation, sourcing
+from manufacturing_plus.purchasing.events import ordered_qty_for_demand
 
 TOLERANCE = 1e-6
 
@@ -158,6 +159,77 @@ def create_mps(so) -> str | None:
 		return _mps_for_period(so)
 
 	return _mps_for_sales_order(so)
+
+
+def sync_mps_with_sales_order(so) -> str | None:
+	"""Bring this order's plan back in line with its lines, after Update Items.
+
+	A plan of this order's own is made to match exactly: a changed qty is written over, a
+	line that has gone is removed. A shared Per Period plan holds other orders too, so
+	there a row is only raised or added, never deleted.
+	"""
+	name = frappe.db.get_value(
+		"Master Production Schedule", {"mp_sales_order": so.name, "docstatus": 0}, "name"
+	)
+	if not name:
+		name = frappe.db.get_value(
+			"Master Production Schedule",
+			{"mp_auto_purchase_run": ["is", "set"], "docstatus": 0, "mp_period_key": ["is", "set"]},
+			"name",
+		)
+	if not name:
+		return None
+
+	mps = frappe.get_doc("Master Production Schedule", name)
+	own_plan = mps.mp_sales_order == so.name
+
+	wanted = {}
+	for item in so.items:
+		if not get_default_bom(item.item_code):
+			continue
+		key = (item.item_code, getdate(item.delivery_date) if item.delivery_date else None)
+		wanted[key] = wanted.get(key, 0.0) + (flt(item.stock_qty) or flt(item.qty))
+
+	keep = []
+	for row in mps.get("items") or []:
+		key = (row.item_code, getdate(row.delivery_date) if row.delivery_date else None)
+		if key in wanted:
+			row.planned_qty = wanted[key] if own_plan else max(flt(row.planned_qty), wanted[key])
+			wanted.pop(key)
+			keep.append(row)
+		elif not own_plan:
+			keep.append(row)
+
+	mps.items = keep
+	for (item_code, delivery_date), qty in wanted.items():
+		item = next(row for row in so.items if row.item_code == item_code)
+		mps.append(
+			"items",
+			{
+				"item_code": item_code,
+				"item_name": item.item_name,
+				"warehouse": item.warehouse,
+				"delivery_date": delivery_date,
+				"planned_qty": qty,
+				"bom_no": get_default_bom(item_code),
+				"uom": item.stock_uom or item.uom,
+			},
+		)
+
+	if not mps.get("items"):
+		return None
+
+	for row_idx, row in enumerate(mps.items, start=1):
+		row.idx = row_idx
+
+	_sync_select_items(mps)
+	latest = [getdate(row.delivery_date) for row in mps.items if row.delivery_date]
+	if latest:
+		mps.to_date = max(max(latest), getdate(mps.from_date or nowdate()))
+
+	mps.flags.ignore_permissions = True
+	mps.save(ignore_permissions=True)
+	return mps.name
 
 
 def _mps_for_sales_order(so) -> str | None:
@@ -384,16 +456,25 @@ def build_demand(so, run_name: str, mps: str | None) -> list[dict]:
 			}
 
 			existing = frappe.db.get_value("Sales Order Material Demand", {"demand_key": key}, "name")
+			top_up = 0.0
 			if existing:
 				doc = frappe.get_doc("Sales Order Material Demand", existing)
+				ordered = flt(doc.ordered_qty)
 				if doc.status in ("Ordered", "Partially Ordered", "Received"):
-					continue
+					# the order grew: buy the difference, leave what is already on order alone
+					top_up = max(short_qty - ordered, 0.0)
+					if top_up <= TOLERANCE:
+						continue
+					values["status"] = "Partially Ordered"
+
 				doc.update({k: v for k, v in values.items() if k != "doctype"})
 				doc.save(ignore_permissions=True)
 			else:
 				doc = frappe.get_doc(values).insert(ignore_permissions=True)
 
-			demands.append(doc.as_dict())
+			row = doc.as_dict()
+			row["top_up_qty"] = top_up
+			demands.append(row)
 
 			taken = min(flt(component["required_qty"]), flt(component.get("available_qty")))
 			if taken > TOLERANCE:
@@ -421,7 +502,9 @@ def create_material_requests(
 
 	for demand in short:
 		item_code = demand["item_code"]
-		if _already_requested(demand["demand_key"]):
+		to_buy = flt(demand.get("top_up_qty")) or flt(demand["short_qty"])
+
+		if not flt(demand.get("top_up_qty")) and _already_requested(demand["demand_key"]):
 			continue
 
 		if excluded_groups and frappe.db.get_value("Item", item_code, "item_group") in excluded_groups:
@@ -429,21 +512,17 @@ def create_material_requests(
 
 		params = sourcing.get_purchase_params(item_code, so.company)
 		supplier = sourcing.get_supplier(item_code, so.company)
-		qty = sourcing.round_qty(demand["short_qty"], params)
+		qty = sourcing.round_qty(to_buy, params)
 		threshold = sourcing.get_class_threshold(item_code)
 
-		if (
-			threshold
-			and params["min_order_qty"]
-			and flt(demand["short_qty"]) < flt(params["min_order_qty"]) * threshold
-		):
+		if threshold and params["min_order_qty"] and to_buy < flt(params["min_order_qty"]) * threshold:
 			_raise_exception(
 				run_name,
 				so,
 				demand,
 				"Below MOQ Threshold",
-				_("Short qty {0} is below MOQ {1} x threshold {2}").format(
-					demand["short_qty"], params["min_order_qty"], threshold
+				_("Qty to buy {0} is below MOQ {1} x threshold {2}").format(
+					to_buy, params["min_order_qty"], threshold
 				),
 			)
 			exceptions += 1
@@ -593,7 +672,7 @@ def create_purchase_orders(material_requests: list[str], run) -> list[str]:
 					{
 						"purchase_order": po.name,
 						"purchase_order_item": row.name,
-						"ordered_qty": row.qty,
+						"ordered_qty": ordered_qty_for_demand(row.mp_demand_key),
 						"expected_receipt_date": row.schedule_date,
 						"status": "Ordered",
 					},

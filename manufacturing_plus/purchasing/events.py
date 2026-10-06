@@ -34,6 +34,57 @@ def enqueue_auto_purchase(doc, method=None):
 	)
 
 
+def refresh_after_update_items(doc, method=None):
+	"""Sales Order on_update_after_submit: Update Items changed the order, so follow it.
+
+	"Update Items" edits the lines of a submitted order in place. Everything downstream was
+	built from the old quantities, so the plan is brought back in line and the auto purchase
+	is run again on the same run — what is already ordered stays, only the difference is
+	bought.
+	"""
+	if not is_enabled("enable_auto_purchase"):
+		return
+
+	if not is_enabled("refresh_plan_on_update_items"):
+		return
+
+	from manufacturing_plus.purchasing.orchestrator import rerun, sync_mps_with_sales_order
+
+	run = frappe.db.get_value("Auto Purchase Run", {"sales_order": doc.name}, "name")
+	if not run:
+		# the order was never run through auto purchase, so there is nothing to follow
+		return
+
+	mps = sync_mps_with_sales_order(doc)
+	if mps:
+		frappe.msgprint(
+			_("Plan {0} updated with the new quantities.").format(frappe.bold(mps)),
+			indicator="green",
+			alert=True,
+		)
+
+	if setting("run_mode", "Background") == "Synchronous":
+		rerun(run)
+		return
+
+	frappe.enqueue(
+		"manufacturing_plus.purchasing.orchestrator.rerun",
+		queue="long",
+		timeout=1800,
+		enqueue_after_commit=True,
+		job_id=f"mp_auto_purchase_rerun::{doc.name}",
+		deduplicate=True,
+		run_name=run,
+	)
+	frappe.msgprint(
+		_("Auto purchase is running again for {0}. Anything already ordered is left alone.").format(
+			frappe.bold(doc.name)
+		),
+		indicator="blue",
+		alert=True,
+	)
+
+
 def release_on_sales_order_cancel(doc, method=None):
 	"""Sales Order on_cancel: free the stock and mark the demand superseded."""
 	reservation.release_for_sales_order(doc.name)
@@ -59,11 +110,14 @@ def sync_dates_from_purchase_order(doc, method=None):
 		demand = frappe.db.get_value(
 			"Sales Order Material Demand",
 			{"demand_key": row.mp_demand_key},
-			["name", "sales_order", "sales_order_item"],
+			["name", "sales_order", "sales_order_item", "short_qty"],
 			as_dict=True,
 		)
 		if not demand:
 			continue
+
+		# an order that grew is bought in instalments, so count every live line, not just this one
+		ordered = ordered_qty_for_demand(row.mp_demand_key)
 
 		frappe.db.set_value(
 			"Sales Order Material Demand",
@@ -71,9 +125,9 @@ def sync_dates_from_purchase_order(doc, method=None):
 			{
 				"purchase_order": doc.name,
 				"purchase_order_item": row.name,
-				"ordered_qty": flt(row.qty),
+				"ordered_qty": ordered,
 				"expected_receipt_date": row.schedule_date,
-				"status": "Ordered",
+				"status": "Ordered" if ordered >= flt(demand.short_qty) else "Partially Ordered",
 			},
 			update_modified=False,
 		)
@@ -127,15 +181,47 @@ def update_so_line_risk(sales_order: str, sales_order_item: str) -> None:
 		)
 
 
+def ordered_qty_for_demand(demand_key: str) -> float:
+	"""Everything still on order for this demand row, over however many Purchase Orders.
+
+	Drafts count: this flow leaves Purchase Orders as drafts unless auto-submit is on, and a
+	draft is still an order someone has raised. Only a cancelled one gives its qty back.
+	"""
+	rows = frappe.db.sql(
+		"""
+		select sum(poi.qty) as qty
+		from `tabPurchase Order Item` poi
+		inner join `tabPurchase Order` po on po.name = poi.parent
+		where poi.mp_demand_key = %(key)s and po.docstatus < 2
+		""",
+		{"key": demand_key},
+	)
+	return flt(rows[0][0]) if rows else 0.0
+
+
 def release_on_purchase_order_cancel(doc, method=None):
+	"""A cancelled Purchase Order gives its qty back: what is left on order is recounted."""
 	for row in doc.items:
-		if row.get("mp_demand_key"):
-			frappe.db.set_value(
-				"Sales Order Material Demand",
-				{"demand_key": row.mp_demand_key},
-				{"status": "Short", "purchase_order": None, "purchase_order_item": None, "ordered_qty": 0},
-				update_modified=False,
-			)
+		if not row.get("mp_demand_key"):
+			continue
+
+		demand = frappe.db.get_value(
+			"Sales Order Material Demand",
+			{"demand_key": row.mp_demand_key},
+			["name", "short_qty"],
+			as_dict=True,
+		)
+		if not demand:
+			continue
+
+		ordered = ordered_qty_for_demand(row.mp_demand_key)
+		values = {"ordered_qty": ordered}
+		if ordered <= 0:
+			values.update({"status": "Short", "purchase_order": None, "purchase_order_item": None})
+		else:
+			values["status"] = "Ordered" if ordered >= flt(demand.short_qty) else "Partially Ordered"
+
+		frappe.db.set_value("Sales Order Material Demand", demand.name, values, update_modified=False)
 
 
 def close_demand_on_receipt(doc, method=None):

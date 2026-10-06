@@ -42,6 +42,7 @@
   "sec_ap",
   "enable_auto_purchase",
   "create_mps_on_so_submit",
+  "refresh_plan_on_update_items",
   "mps_mode",
   "mps_period",
   "plan_includes_open_orders",
@@ -295,6 +296,13 @@
    "fieldname": "create_mps_on_so_submit",
    "fieldtype": "Check",
    "label": "Create MPS On SO Submit"
+  },
+  {
+   "default": "1",
+   "description": "When Update Items changes a submitted Sales Order, rewrite its plan with the new quantities and run auto purchase again. Only the difference is bought; anything already ordered is left alone.",
+   "fieldname": "refresh_plan_on_update_items",
+   "fieldtype": "Check",
+   "label": "Follow Update Items On The Sales Order"
   },
   {
    "default": "Per Sales Order",
