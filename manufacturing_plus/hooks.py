@@ -362,6 +362,7 @@ has_permission = {
 
 doctype_js = {
 	"Sales Order": "public/js/sales_order.js",
+	"Work Order": "public/js/work_order.js",
 	"Pick List": "public/js/pick_list.js",
 	"Purchase Receipt": "public/js/purchase_receipt.js",
 }

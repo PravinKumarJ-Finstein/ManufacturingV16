@@ -20,6 +20,8 @@ frappe.ui.form.on("Pick List", {
 	},
 
 	refresh(frm) {
+		add_stock_entry_button(frm);
+
 		if (frm.doc.docstatus === 1 && (frm.doc.mp_spool_details || []).length) {
 			frm.add_custom_button(__("Stores Return"), () => {
 				frappe.new_doc("Stores Return", {
@@ -39,3 +41,41 @@ frappe.ui.form.on("Pick List", {
 		}
 	},
 });
+
+// The transfer is created automatically on submit; this is the retry when that failed.
+function add_stock_entry_button(frm) {
+	if (frm.doc.docstatus !== 1 || !frm.doc.work_order) return;
+	if (frm.doc.purpose !== "Material Transfer for Manufacture") return;
+
+	frappe.db
+		.get_value("Stock Entry", { pick_list: frm.doc.name, docstatus: ["<", 2] }, "name")
+		.then((r) => {
+			if (r.message && r.message.name) {
+				frm.add_custom_button(__("Stock Entry {0}", [r.message.name]), () =>
+					frappe.set_route("Form", "Stock Entry", r.message.name)
+				);
+				return;
+			}
+
+			frm.add_custom_button(
+				__("Create Stock Entry"),
+				() => {
+					frappe.call({
+						method: "manufacturing_plus.shopfloor.pick_list.make_stock_entry",
+						args: { pick_list: frm.doc.name },
+						freeze: true,
+						freeze_message: __("Transferring material..."),
+						callback(res) {
+							if (!res.message) return;
+							frappe.show_alert({
+								message: __("Stock Entry {0} created.", [res.message]),
+								indicator: "green",
+							});
+							frappe.set_route("Form", "Stock Entry", res.message);
+						},
+					});
+				},
+				__("Create")
+			).addClass("btn-primary");
+		});
+}

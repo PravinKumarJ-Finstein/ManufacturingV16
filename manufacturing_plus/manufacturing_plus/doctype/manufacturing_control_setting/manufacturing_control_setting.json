@@ -80,6 +80,9 @@
   "sync_wo_status_from_job_card",
   "block_expired_batches",
   "warn_duplicate_pick_list",
+  "custom_wo_pick_list",
+  "pick_list_respect_other_orders",
+  "pick_list_fefo_batches",
   "cb_pl",
   "auto_stock_entry_on_pick_list",
   "enable_pick_list_buffer",
@@ -532,6 +535,27 @@
    "fieldname": "warn_duplicate_pick_list",
    "fieldtype": "Check",
    "label": "Warn On Duplicate Pick List"
+  },
+  {
+   "default": "1",
+   "description": "Replaces the core button on the Work Order. Shows what each component has free before anything is created, picks only that, and leaves the rest outstanding for a later Pick List.",
+   "fieldname": "custom_wo_pick_list",
+   "fieldtype": "Check",
+   "label": "Create Pick List From Work Order"
+  },
+  {
+   "default": "1",
+   "description": "On: stock another submitted Work Order still needs is not offered to this one, so the same component is never promised twice.",
+   "fieldname": "pick_list_respect_other_orders",
+   "fieldtype": "Check",
+   "label": "Hold Back Stock Owed To Other Work Orders"
+  },
+  {
+   "default": "1",
+   "description": "Allocate batch-tracked components earliest expiry first, skipping batches already picked on another draft Pick List.",
+   "fieldname": "pick_list_fefo_batches",
+   "fieldtype": "Check",
+   "label": "Pick Batches Earliest Expiry First"
   },
   {
    "fieldname": "cb_pl",
