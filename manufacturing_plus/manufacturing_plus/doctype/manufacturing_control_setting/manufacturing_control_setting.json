@@ -41,6 +41,8 @@
   "tab_purchase",
   "sec_ap",
   "enable_auto_purchase",
+  "enable_forecast_orders",
+  "plan_forecast_orders",
   "create_mps_on_so_submit",
   "refresh_plan_on_update_items",
   "mps_mode",
@@ -293,6 +295,21 @@
    "fieldname": "enable_auto_purchase",
    "fieldtype": "Check",
    "label": "Enable Auto Purchase"
+  },
+  {
+   "default": "1",
+   "description": "Adds Forecast, Repeat Order, Job Work, FOC and Production Type to the Sales Order. A firm order then consumes the matching forecast instead of adding to it.",
+   "fieldname": "enable_forecast_orders",
+   "fieldtype": "Check",
+   "label": "Forecast Sales Orders"
+  },
+  {
+   "default": "0",
+   "depends_on": "enable_forecast_orders",
+   "description": "Off: a forecast order creates no plan and no Purchase Order, because the customer has not committed. On: forecasts are planned and bought like any other order, which buys material against an estimate.",
+   "fieldname": "plan_forecast_orders",
+   "fieldtype": "Check",
+   "label": "Plan And Buy For Forecast Orders"
   },
   {
    "default": "1",
